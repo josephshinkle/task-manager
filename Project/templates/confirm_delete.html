@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <h2>Confirm Delete</h2>
+
+    <p>Are you sure you want to delete this task?</p>
+
+    <p>
+        <strong>{{ task["title"] }}</strong>
+    </p>
+
+    {% if task["notes"] %}
+        <p><em>{{ task["notes"] }}</em></p>
+    {% endif %}
+
+    <form method="POST" action="{{ url_for('delete_task', task_id=task['id']) }}">
+        <button type="submit">Yes, delete</button>
+    </form>
+    
+    <a href="{{ url_for('tasks') }}">Cancel</a>
+{% endblock %}

@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang = "en">
+<head>
+    <meta charset = "UTF-8">
+    <meta name="viewport" content="width=device-width, intital-scale=1" />
+    <title>{% block title %}Task Manager{% endblock %}</title>
+    <link rel = "stylesheet" href = "{{ url_for('static', filename = 'css/style.css')}}">
+</head>
+<body>
+    <nav>
+        <strong>Task Manager</strong>
+        <a href = "{{ url_for('about') }}">About</a>
+        <a href = "/tasks">Task Manager</a>
+    </nav>
+
+    <hr>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <div class="flash-wrap">
+                {% for category, message in messages %}
+                <div class="flash flash-{{ category }}">{{ message }}</div>
+                {% endfor %}
+            </div>
+            {% endif %}
+            {% endwith %}
+    
+    <main>
+    {% block content %}{% endblock %}
+    </main>
+
+</body>
+</html>

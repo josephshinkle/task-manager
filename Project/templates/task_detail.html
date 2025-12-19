@@ -1,0 +1,26 @@
+{% extends "base.html"%}
+
+{% block content %}
+<h2>{{ task["title"] }}</h2>
+
+<p>
+    <strong>Notes:</strong>
+    {{ task["notes"] or "None" }}
+</p>
+
+<p>
+    <strong>Status:</strong>
+    {% if task["completed"] %}
+        Completed
+    {% else %}
+        Incomplete
+    {% endif %}
+</p>
+
+<p>
+    <strong>Created at:</strong> 
+    {{ task["created_at"] }}
+</p>
+
+<a href="{{ url_for('tasks') }}">Back to tasks</a>
+{% endblock %}
