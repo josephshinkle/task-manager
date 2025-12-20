@@ -215,5 +215,61 @@ def delete_task(task_id):
     flash("Task deleted.", "success")
     return redirect(url_for("tasks"))
 
+@app.route("/register", methods=["GET", "POST"])
+def register():
+    if request.method == "POST":
+        email = request.form.get("email", "").strip().lower()
+        password = request.form.get("password", "")
+
+        if not email or not password:
+            flash("Email and password are required.", "error")
+            return redirect(url_for("register"))
+        
+        pw_hash = generate_password_hash(password)
+
+        conn = get_db_connection()
+        try:
+            conn.execute(
+                "INSERT INTO users (email, password_hash, created_at) VALUES (?, ?, ?)",
+                (email, pw_hash, datetime.now().strftime("%m-%d-%Y %H:%M"))
+            )
+            conn.commit()
+        except sqlite3.IntegrityError:
+            conn.close()
+            flash("That email is already registered.", "error")
+            return redirect(url_for("register"))
+        
+        conn.close()
+        flash("Account created. Please log in.", "success")
+        return redirect(url_for("login"))
+    
+    return render_template("register.html")
+
+@app.route("/login", methods=["GET", "POST"])
+def login():
+    if request.method == "POST":
+        email = request.form.get("email", "").strip().lower()
+        password = request.form.get("password", "")
+
+        conn = get_db_connection()
+        user = conn.execute("SELECT * FROM users WHERE email = ?", (email,)).fetchone()
+        conn.close
+
+        if user is None or not check_password_hash(user["password_hash"], password):
+            flash("Invalid email or password.", "error")
+            return redirect(url_for("login"))
+        
+        session["user_id"] = user["id"]
+        flash("Logged in.", "success")
+        return redirect(url_for("tasks"))
+    
+    return render_template("login.html")
+
+@app.route("/logout", methods=["POST"])
+def logout():
+    session.pop("user_id", None)
+    flash("Logged out.", "info")
+    return redirect(url_for("login"))
+
 if __name__ == "__main__":
     app.run(debug=True)
