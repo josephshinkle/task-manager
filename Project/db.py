@@ -32,10 +32,10 @@ def migrate_db():
     #1 users table
     conn.execute("""
     CREATE TABLE IF NOT EXISTS user(
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    email TEXT NOT NULL UNIQUE,           
-    password_hash TEXT NOT NULL,
-    created_at TEXT NOT NULL                                    
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        email TEXT NOT NULL UNIQUE,           
+        password_hash TEXT NOT NULL,
+        created_at TEXT NOT NULL                                    
     )
     """)
 

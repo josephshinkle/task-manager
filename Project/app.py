@@ -1,13 +1,29 @@
-from db import init_db, get_db_connection
-from flask import Flask, render_template, request, redirect, url_for, abort, flash
+import sqlite3
+from functools import wraps
+from db import init_db, get_db_connection, migrate_db
+from flask import Flask, render_template, request, redirect, url_for, abort, flash, session
 from datetime import datetime
 from math import ceil
+from werkzeug.security import generate_password_hash, check_password_hash
 
 app = Flask(__name__)
 
-app.secret_key = "dev-secret-change-me"
+app.secret_key = "dev-change-this-later"
 
 init_db()
+migrate_db()
+
+def current_user_id():
+    return session.get("user_id")
+
+def login_required(view_func):
+    @wraps(view_func)
+    def wrapper(*args, **kwargs):
+        if not current_user_id():
+            flash("Please log in to continue.", "warning")
+            return redirect(url_for("login"))
+        return view_func(*args, **kwargs)
+    return wrapper
 
 @app.route("/")
 def home():
