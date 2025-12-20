@@ -1,0 +1,10 @@
+# Python junk
+__pycache__/
+*.__pycache__
+
+# Virtual env
+.venv/
+
+# Local database (don't commit)
+tasks.db
+*.db

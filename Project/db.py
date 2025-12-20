@@ -10,14 +10,27 @@ def get_db_connection():
 
 def init_db():
     conn = get_db_connection()
-    conn.execute("""
+    cur = conn.cursor()
+
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS users (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            email TEXT NOT NULL UNIQUE,
+            password_hash TEXT NOT NULL,
+            created_at TEXT NOT NULL    
+        )
+    """)
+
+    cur.execute("""
         CREATE TABLE IF NOT EXISTS tasks (
                  id INTEGER PRIMARY KEY AUTOINCREMENT,
+                 user_id INTEGER NOT NULL,
                  title TEXT NOT NULL,
                  notes TEXT,
                  completed INTEGER NOT NULL DEFAULT 0,
-                 created_at TEXT NOT NULL
-        );
+                 created_at TEXT NOT NULL,
+                 FOREIGN KEY (user_id) REFERENCES users(id)
+        )
     """)
     conn.commit()
     conn.close()

@@ -5,9 +5,9 @@
 
     <!-- Filter links -->
     <div>
-        <a href="{{ url_for('tasks', filter='all', search=search) }}">All</a> |
-        <a href="{{ url_for('tasks', filter='active', search=search) }}">Active</a> |
-        <a href="{{ url_for('tasks', filter='done', search=search) }}">Completed</a>
+        <a href="{{ url_for('tasks', filter='all', search=search, sort=sort, page=1) }}">All</a> |
+        <a href="{{ url_for('tasks', filter='active', search=search, sort=sort, page=1) }}">Active</a> |
+        <a href="{{ url_for('tasks', filter='completed', search=search, sort=sort, page=1) }}">Completed</a>
     </div>
 
     <br>
@@ -15,6 +15,7 @@
     <!-- Search -->
     <form method = "GET" action="{{ url_for('tasks') }}">
         <input type = "hidden" name = "filter" value = "{{ filter_val }}">
+        <input type="hidden" name="sort" value="{{ sort }}">
         <input type = "text" name = "search" placeholder = "Search..." value = "{{ search}}">
         <button type = "submit">Search</button>
     </form>
