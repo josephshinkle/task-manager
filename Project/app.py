@@ -1,10 +1,13 @@
 import sqlite3
+import uuid
 from functools import wraps
 from db import init_db, get_db_connection, migrate_db
 from flask import Flask, render_template, request, redirect, url_for, abort, flash, session
 from datetime import datetime
 from math import ceil
 from werkzeug.security import generate_password_hash, check_password_hash
+from dataclasses import dataclass
+from functools import wraps
 
 app = Flask(__name__)
 
@@ -27,7 +30,72 @@ def login_required(view_func):
         return view_func(*args, **kwargs)
     return wrapper
 
-#Auth Routes
+# Auth Helpers
+
+@dataclass(frozen=True)
+# Reperesents "who owns tasks for this request"
+class Owner:
+    user_id: int | None
+    guest_id: str | None
+
+def get_current_owner() -> Owner:
+# Returns the current Owner for this request
+
+    uid = session.get("user_id")
+
+    if uid is not None:
+        return Owner(user_id=uid, guest_id=None)
+    
+    gid = session.get("guest_id")
+    
+    if gid is None:
+        gid = str(uuid.uuid4())
+        session["guest_id"] = gid
+
+    return Owner(user_id=None, guest_id=gid)
+
+def require_owner(view_func):
+# Decorator that gurantees an Owner exists
+
+    @wraps(view_func)
+    def wrapper(*args, **kwargs):
+        
+        get_current_owner()
+        return view_func(*args, **kwargs)
+    
+    return wrapper
+
+def owner_where_clause(owner: Owner) -> tuple[str, list]:
+# Enforces either user_id or guest_id
+    
+    if owner.user_id is not None:
+        return "user_id = ?", [owner.user_id]
+    
+    return "guest_id = ?", [owner.guest_id]
+
+def claim_guest_tasks_for_user(user_id: int):
+    # Allows guest user to claim previous tasks
+
+    gid = session.get("guest_id")
+
+    if gid is None:
+        return
+
+    conn = get_db_connection()
+    conn.execute(
+        """
+        UPDATE tasks
+        SET user_id = ?, guest_id = NULL
+        WHERE guest_id = ?
+        """,
+        (user_id, gid)
+    )
+    conn.commit()
+    conn.close
+
+    session.pop("guest_id", None)
+
+# Auth Routes
 
 @app.route("/")
 def home():
@@ -38,10 +106,12 @@ def about():
     return render_template("about.html")
 
 @app.route("/tasks", methods = ["GET", "POST"])
-@login_required
+@require_owner
 def tasks():
 
-    uid = session.get("user_id")
+    # Post create a task owned by current owner
+    # Get list tasks owned by current owner with filter/search/sort/pagination
+
     conn = get_db_connection()
 
     filter_val = request.args.get("filter", "all").strip().lower()
@@ -52,51 +122,62 @@ def tasks():
 
     if page < 1:
         page = 1
-
     offset = (page - 1) * per_page
 
+    owner = get_current_owner()
 
     if request.method == "POST":
         title = request.form.get("title", "").strip()
         notes = request.form.get("notes", "").strip()
-        uid = current_user_id()
         
         if not title:
             flash("Title cannot be empty.", "error")
             conn.close()
             return redirect(url_for("tasks", filter=filter, search=search, sort=sort, page=page))
-            
-        conn.execute(
+        
+        if owner.user_id is not None:
+            # Logged-in insert uses user_id
+            conn.execute(
             """
-            INSERT INTO tasks (user_id, title, notes, completed, created_at)
-            VALUES (?, ?, ?, ?, ?)
+            INSERT INTO tasks (user_id, guest_id, title, notes, completed, created_at)
+            VALUES (?, NULL, ?, ?, 0, ?)
             """,
-            (uid, title, notes, 0, datetime.now().strftime("%m-%d-%Y %H:%M"))
+            (owner.user_id, title, notes, 0, datetime.now().strftime("%m-%d-%Y %H:%M"))
         )
+        else:
+            # Guest insert uses guest_id
+            conn.execute(
+            """
+            INSERT INTO tasks (user_id, guest_id, title, notes, completed, created_at)
+            VALUES (NULL, ?, ?, ?,  0, ?)
+            """,
+            (owner.guest_id, title, notes, datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+            )
         conn.commit()
         conn.close()
 
         flash("Task added.", "success")
         return redirect(url_for("tasks", filter=filter, search=search, sort=sort, page=1))
 
-    where_clauses = []
+    where_parts = []
     params = []
 
-    where_clauses.append("user_id = ?")
-    params.append(uid)
+    owner_sql, owner_params = owner_where_clause(owner)
+    where_parts.append(owner_sql)
+    params.extend(owner_params)
 
     if filter_val == "active":
-        where_clauses.append("completed = 0")
+        where_parts.append("completed = 0")
     elif filter_val == "completed":
-        where_clauses.append("completed = 1")
+        where_parts.append("completed = 1")
     else :
         filter_val = "all"
 
     if search:
-        where_clauses.append("(title LIKE ? OR notes LIKE ?)")
+        where_parts.append("(title LIKE ? OR notes LIKE ?)")
         params.extend([f"%{search}%", f"%{search}%"])
     
-    where_sql = where_sql = "WHERE " + " AND ".join(where_clauses)
+    where_sql = "WHERE " + " AND ".join(where_parts)
     
     order_by_map = {
         "created_desc": "id DESC",
@@ -106,8 +187,11 @@ def tasks():
     }
     order_by = order_by_map.get(sort, "id DESC")
 
+    conn = get_db_connection()
+
     total = conn.execute(
-        f"""SELECT COUNT(*) 
+        f"""
+        SELECT COUNT(*) 
         FROM tasks 
         {where_sql}
         """,
@@ -139,25 +223,26 @@ def tasks():
         total_pages = total_pages,
         per_page = per_page,
         total = total,
+        is_logged_in=(owner.user_id is not None),
         )
 
 @app.route("/tasks/toggle/<int:task_id>", methods = ["POST"])
-@login_required
+@require_owner
 def toggle_task(task_id):
     """
-    Toggles completed status for one task.
-    Ownership enforced: WHERE id = ? AND user_id = ?
+    Toggles completed status for a task owned by current owner
     """
-    uid = current_user_id()
+    owner = get_current_owner()
+    owner_sql, owner_params = owner_where_clause(owner)
 
     conn = get_db_connection()
     conn.execute(
-        """
+        f"""
         UPDATE tasks
         SET completed = CASE completed WHEN 0 THEN 1 ELSE 0 END
-        WHERE id = ? AND user_id = ?
+        WHERE id = ? AND {owner_sql}
         """,
-        (task_id, uid)
+        [task_id] + owner_params
     )
     conn.commit()
     conn.close()
@@ -172,25 +257,20 @@ def toggle_task(task_id):
         ))
 
 @app.route("/tasks/<int:task_id>")
-@login_required
+@require_owner
 def task_detail(task_id):
     """
-    Show one task.
-    Ownership must be enforced:
-        WHERE id = ? AND user_id = ?
+    Show a single task owned by the current owner (user or guest)
     """
 
-    uid = current_user_id()
+    owner = get_current_owner()
+    owner_sql, owner_params = owner_where_clause(owner)
 
     conn = get_db_connection()
 
     task = conn.execute(
-        """
-        SELECT id, user_id, title, notes, completed, created_at
-        FROM tasks 
-        WHERE id = ? AND user_id = ?
-        """,
-        (task_id, uid)
+        f"SELECT *  FROM tasks WHERE id = ? AND {owner_sql}",
+        [task_id] + owner_params
     ).fetchone()
     conn.close()
 
@@ -200,19 +280,19 @@ def task_detail(task_id):
     return render_template("task_detail.html", task=task)
 
 @app.route("/tasks/<int:task_id>/edit", methods = ["GET", "POST"])
-@login_required
-def edit_task(task_id):
+@require_owner
+def edit_task(task_id): 
     """
-    - GET: show edit form with existing data
-    - POST: update title/notes
-    Ownership enforced on both SELECT and UPDATE.
+    Edit a task owned by current owner
     """
-    uid = current_user_id()
+    owner = get_current_owner()
+    owner_sql, owner_params = owner_where_clause(owner)
+    
     conn = get_db_connection()
 
     task = conn.execute(
-        "SELECT * FROM tasks WHERE id = ? AND user_id = ?",
-        (task_id, uid)
+        f"SELECT * FROM tasks WHERE id = ? AND {owner_sql}",
+        [task_id] + owner_params
     ).fetchone()
 
     if task is None:
@@ -228,37 +308,36 @@ def edit_task(task_id):
             conn.close()
             return redirect(url_for("edit_task", task_id=task_id))
         
-            conn.execute(
-                """
-                UPDATE tasks 
-                SET title = ?, notes = ? 
-                WHERE id = ?", AND user_id = ?
-                """,
-                (title, notes, task_id, uid)
-            )
-            conn.commit()
-            conn.close()
+        conn.execute(
+            f"""
+            UPDATE tasks 
+            SET title = ?, notes = ? 
+            WHERE id = ? AND {owner_sql}
+            """,
+            [title, notes, task_id] + owner_params
+        )
+        conn.commit()
+        conn.close()
             
-            flash("Task saved.", "success")
-            return redirect(url_for("task_detail", task_id=task_id))
+        flash("Task saved.", "success")
+        return redirect(url_for("task_detail", task_id=task_id))
     
     conn.close()
     return render_template("edit_task.html", task=task)
 
 @app.route("/tasks/<int:task_id>/confirm_delete", methods=["GET"])
-@login_required
+@require_owner
 def confirm_delete(task_id):
     """
-    Displays a confirmation page before deleting.
-    This is GET-only (safe navigation).
-    Ownership enforced on SELECT.
+    Shows confirmation page for deleting a task (owned by current owner)
     """
-    uid = current_user_id()
+    owner = get_current_owner()
+    owner_sql, owner_params = owner_where_clause(owner)
 
     conn = get_db_connection()
     task = conn.execute(
-        "SELECT * FROM tasks WHERE id = ? AND user_id = ?",
-        (task_id, uid)
+        f"SELECT * FROM tasks WHERE id = ? AND {owner_sql}",
+        [task_id] + owner_params
     ).fetchone()
     conn.close()
 
@@ -268,18 +347,18 @@ def confirm_delete(task_id):
     return render_template("confirm_delete.html", task=task)
 
 @app.route("/tasks/delete/<int:task_id>", methods = ["POST"])
-@login_required
+@require_owner
 def delete_task(task_id):
     """
-    Actually deletes the task (POST).
-    Ownership enforced: WHERE id = ? AND user_id = ?
+    Delete a task owned by current owner
     """
-    uid = current_user_id()
+    owner = get_current_owner()
+    owner_sql, owner_params = owner_where_clause(owner)
 
     conn = get_db_connection()
     conn.execute(
-        "DELETE FROM tasks WHERE id = ? AND user_id = ?",
-        (task_id, uid)
+        "DELETE FROM tasks WHERE id = ? AND {owner_sql}",
+        [task_id] + owner_params
     )
     conn.commit()
     conn.close()
@@ -339,6 +418,7 @@ def login():
             return redirect(url_for("login"))
         
         session["user_id"] = user["id"]
+        claim_guest_tasks_for_user(user["id"])
         flash("Logged in.", "success")
         return redirect(url_for("tasks"))
     

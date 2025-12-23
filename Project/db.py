@@ -6,6 +6,7 @@ DB_PATH = Path(__file__).resolve().parent / "tasks.db"
 def get_db_connection():
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
+    conn.execute("PRAGMA foreign_keys = ON;")
     return conn
 
 def init_db():
@@ -25,11 +26,12 @@ def init_db():
         CREATE TABLE IF NOT EXISTS tasks (
                  id INTEGER PRIMARY KEY AUTOINCREMENT,
                  user_id INTEGER NOT NULL,
+                 guest_id TEXT,
                  title TEXT NOT NULL,
                  notes TEXT,
                  completed INTEGER NOT NULL DEFAULT 0,
                  created_at TEXT NOT NULL,
-                 FOREIGN KEY (user_id) REFERENCES users(id)
+                 FOREIGN KEY (user_id) REFERENCES users (id)
         )
     """)
     conn.commit()
@@ -42,7 +44,7 @@ def _column_exists(conn, table, column):
 def migrate_db():
     conn = get_db_connection()
     
-    #1 users table
+    # users table
     conn.execute("""
     CREATE TABLE IF NOT EXISTS user(
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -52,9 +54,13 @@ def migrate_db():
     )
     """)
 
-    #2 tasks.user_id column (if tasks already existed before user_id)
+    # Add user_id column (if tasks already existed before user_id)
     if not _column_exists(conn, "tasks", "user_id"):
         conn.execute("ALTER TABLE tasks ADD COLUMN user_id INTEGER")
+
+    # Add guest_id cloumn to taks if missing
+    if not _column_exists(conn, "tasks", "guest_id"):
+        conn.execute("ALTER TABLE tasks ADD COLUMN guest_id TEXT")
     
     conn.commit()
     conn.close()

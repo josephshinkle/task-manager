@@ -2,12 +2,27 @@
 {% block content %}
   <h1>Edit Task</h1>
 
-  <form method="POST">
-    <input type="text" name="title" value="{{ task['title'] }}" required>
+  <form method="POST" action="{{ url_for('edit_task', task_id=task['id']) }}">
+
+    <label for="title">Title</label><br>
+    <input 
+      id="title"
+      type="text" 
+      name="title" 
+      value="{{ task['title'] }}" 
+      required
+    >
 
     <br><br>
 
-    <textarea name="notes" rows="4" cols="40">{{ task['notes'] or '' }}</textarea>
+    <label for="notes">Notes</label><br>
+    <textarea 
+      id="notes"
+      name="notes" 
+      rows="4" 
+      cols="40"
+    >{{ task['notes'] or '' }}
+    </textarea>
 
     <br><br>
 
