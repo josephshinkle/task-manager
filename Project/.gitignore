@@ -1,10 +1,18 @@
-# Python junk
+# Python
 __pycache__/
 *.__pycache__
 
 # Virtual env
 .venv/
 
+# Environment variables
+.env
+
 # Local database (don't commit)
 tasks.db
 *.db
+.sqlite3
+
+# Editor
+.vscode/
+.DS_store
