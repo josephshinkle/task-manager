@@ -4,25 +4,30 @@
     <meta charset = "UTF-8">
     <meta name="viewport" content="width=device-width, intital-scale=1" />
     <title>{% block title %}Task Manager{% endblock %}</title>
-    <link rel = "stylesheet" href = "{{ url_for('static', filename = 'css/style.css')}}">
+    <link rel = "stylesheet" href = "{{ url_for('static', filename = 'css/app.css')}}">
 </head>
 <body>
-    <nav>
-        <strong>Task Manager</strong>
-        <a href = "{{ url_for('about') }}">About</a>
-        <a href = "/tasks">Task Manager</a>
+  <div class="container">
 
-        {% if session.get("user_id")%}
-            <form method="POST" action="{{ url_for('logout') }}" style="display:inline;">
-                <button type="submit">Logout</button>
-            </form>
-        {% else %}
-            <a href="{{ url_for('login') }}">Login</a>
-            <a href="{{ url_for('register') }}">Register</a>
-        {% endif %}
+    <nav class="navbar">
+        <div class="nav-inner">
+            <a href="/"  class="brand">Task Manager</a>
+
+            <div class="nav-links">
+                <a href="{{ url_for('about') }}">About</a>
+                <a href="/tasks">Tasks</a>
+
+                {% if session.get('user_id') %}
+                 <form method="POST" action="{{ url_for('logout') }}">
+                    <button class="nav-btn">Logout</button>
+                 </form>
+                {% else %}
+                    <a href="{{ url_for('login') }}">Login</a>
+                    <a href="{{ url_for('register') }}" class="primary">Register</a>
+                {% endif %}
+            </div>
+        </div>
     </nav>
-
-    <hr>
 
     {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}
@@ -31,12 +36,15 @@
                 <div class="flash flash-{{ category }}">{{ message }}</div>
                 {% endfor %}
             </div>
-            {% endif %}
-            {% endwith %}
+        {% endif %}
+    {% endwith %}
     
-    <main>
-    {% block content %}{% endblock %}
+    <main class="page">
+        <div class="content-card">
+          {% block content %}{% endblock %}
+        </div>
     </main>
 
+ </div>
 </body>
 </html>

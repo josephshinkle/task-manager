@@ -17,6 +17,10 @@
         <input type = "hidden" name = "filter" value = "{{ filter_val }}">
         <input type="hidden" name="sort" value="{{ sort }}">
         <input type = "text" name = "search" placeholder = "Search..." value = "{{ search}}">
+
+        <br>
+        <br>
+
         <button type = "submit">Search</button>
     </form>
 
@@ -34,6 +38,9 @@
             <option value = "title_desc" {% if sort == "title_desc" %}selected{% endif %}>Title Z-A</option>
         </select>
 
+        <br>
+        <br>
+
         <button type = "submit">Sort</button>
     </form>
 
@@ -45,6 +52,7 @@
         <br>
         <br>
         <textarea name = "notes" rows = "2" cols = "40" placeholder = "Notes"></textarea>
+        <br>
         <br>
         <button type = "submit">Add task</button>
     </form>

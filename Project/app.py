@@ -357,7 +357,7 @@ def delete_task(task_id):
 
     conn = get_db_connection()
     conn.execute(
-        "DELETE FROM tasks WHERE id = ? AND {owner_sql}",
+        f"DELETE FROM tasks WHERE id = ? AND {owner_sql}",
         [task_id] + owner_params
     )
     conn.commit()
