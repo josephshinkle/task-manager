@@ -16,11 +16,36 @@ A full-stack task management web application built with Flask.
 - HTML / CSS
 - Jinja2 templates
 
-## Setup Instructions
+## Screenshots
+
+### Home
+![Home](Project/static/images/home.png)
+
+### Login
+![Login](Project/static/images/login.png)
+
+### Tasks
+![Tasks](Project/static/images/tasks.png)
+
+# Setup
+
 ```bash
 git clone https://github.com/josephshinkle/task-manager.git
-cd task-manager/Project
-python -m venv venv
-source venv/bin/activate  # Windows: venv\\Scripts\\activate
-pip install flask
-python app.py
+cd task-manager
+
+# Create venv (repo root)
+python -m venv .venv
+
+# Activate venv
+# Windows (PowerShell):
+.\.venv\Scripts\Activate.ps1
+# Windows (CMD):
+.\.venv\Scripts\activate.bat
+# Mac/Linux:
+source .venv/bin/activate
+
+# Install dependencies
+pip install -r requirements.txt
+
+# Run the app
+python Project/app.py
