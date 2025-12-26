@@ -145,16 +145,16 @@ def tasks():
             INSERT INTO tasks (user_id, guest_id, title, notes, completed, created_at)
             VALUES (?, NULL, ?, ?, 0, ?)
             """,
-            (owner.user_id, title, notes, 0, datetime.now().strftime("%m-%d-%Y %H:%M"))
+            (owner.user_id, title, notes, datetime.now().strftime("%m-%d-%Y %H:%M"))
         )
         else:
             # Guest insert uses guest_id
             conn.execute(
             """
             INSERT INTO tasks (user_id, guest_id, title, notes, completed, created_at)
-            VALUES (NULL, ?, ?, ?,  0, ?)
+            VALUES (NULL, ?, ?, ?, 0, ?)
             """,
-            (owner.guest_id, title, notes, datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+            (owner.guest_id, title, notes, datetime.now().strftime("%Y-%m-%d %H:%M"))
             )
         conn.commit()
         conn.close()
@@ -432,6 +432,10 @@ def logout():
     session.pop("user_id", None)
     flash("Logged out.", "info")
     return redirect(url_for("login"))
+
+@app.get("/health")
+def health():
+    return {"status": "ok"}, 200
 
 if __name__ == "__main__":
     app.run(debug=True)
