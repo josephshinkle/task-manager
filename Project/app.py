@@ -14,7 +14,7 @@ from functools import wraps
 load_dotenv()
 
 app = Flask(__name__)
-app.secret_key = os.environment.get("SECRET_KEY", "dev-fallback-only")
+app.secret_key = os.environ.get("SECRET_KEY", "dev-fallback-only")
 
 init_db()
 migrate_db()
