@@ -1,5 +1,7 @@
+import os
 import sqlite3
 import uuid
+from dotenv import load_dotenv
 from functools import wraps
 from db import init_db, get_db_connection, migrate_db
 from flask import Flask, render_template, request, redirect, url_for, abort, flash, session
@@ -9,9 +11,10 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from dataclasses import dataclass
 from functools import wraps
 
-app = Flask(__name__)
+load_dotenv()
 
-app.secret_key = "dev-change-this-later"
+app = Flask(__name__)
+app.secret_key = os.environment.get("SECRET_KEY", "dev-fallback-only")
 
 init_db()
 migrate_db()
