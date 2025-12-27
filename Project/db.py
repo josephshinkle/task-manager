@@ -32,7 +32,7 @@ def init_db():
                  completed INTEGER NOT NULL DEFAULT 0,
                  created_at TEXT NOT NULL,
                  FOREIGN KEY (user_id) REFERENCES users (id)
-                CHECK (
+                 CHECK (
                     (user_id IS NOT NULL AND guest_id is NULL) OR
                     (user_id IS NULL AND guest_id IS NOT NULL)
                 )
