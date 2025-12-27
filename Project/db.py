@@ -35,7 +35,7 @@ def init_db():
                  CHECK (
                     (user_id IS NOT NULL AND guest_id is NULL) OR
                     (user_id IS NULL AND guest_id IS NOT NULL)
-                )
+                 )
         )
     """)
     conn.commit()
