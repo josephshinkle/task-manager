@@ -25,13 +25,17 @@ def init_db():
     cur.execute("""
         CREATE TABLE IF NOT EXISTS tasks (
                  id INTEGER PRIMARY KEY AUTOINCREMENT,
-                 user_id INTEGER NOT NULL,
+                 user_id INTEGER,
                  guest_id TEXT,
                  title TEXT NOT NULL,
                  notes TEXT,
                  completed INTEGER NOT NULL DEFAULT 0,
                  created_at TEXT NOT NULL,
                  FOREIGN KEY (user_id) REFERENCES users (id)
+                CHECK (
+                    (user_id IS NOT NULL AND guest_id is NULL) OR
+                    (user_id IS NULL AND guest_id IS NOT NULL)
+                )
         )
     """)
     conn.commit()
