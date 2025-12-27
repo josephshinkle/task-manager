@@ -3,7 +3,7 @@ import sqlite3
 import uuid
 from dotenv import load_dotenv
 from functools import wraps
-from .db import init_db, get_db_connection, migrate_db
+from .db import get_db_connection
 from flask import Flask, render_template, request, redirect, url_for, abort, flash, session
 from datetime import datetime
 from math import ceil
@@ -15,9 +15,6 @@ load_dotenv()
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "dev-fallback-only")
-
-init_db()
-migrate_db()
 
 # Auth Owners
 def current_user_id():
