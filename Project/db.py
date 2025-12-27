@@ -1,7 +1,7 @@
 import sqlite3
 from pathlib import Path
 
-DB_PATH = Path(__file__).resolve().parent / "tasks.db"
+DB_PATH = Path("/opt/render/project/data/tasks.db").resolve().parent / "tasks.db"
 
 def get_db_connection():
     conn = sqlite3.connect(DB_PATH)
