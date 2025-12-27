@@ -1,7 +1,10 @@
 import sqlite3
 from pathlib import Path
 
-DB_PATH = Path("/opt/render/project/data/tasks.db").resolve().parent / "tasks.db"
+RENDER_DB = Path("/opt/render/project/data/tasks.db")
+LOCAL_DB = Path(__file__).resolve().parent / "tasks.db"
+
+DB_PATH = RENDER_DB if RENDER_DB.parent.exists() else LOCAL_DB
 
 def get_db_connection():
     conn = sqlite3.connect(DB_PATH)
