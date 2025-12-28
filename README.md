@@ -1,20 +1,34 @@
 # Task Manager
 
-A full-stack task management web application built with Flask.
+A full-stack task management web application built with Flask that supports authenticated users, guest sessions, and persistent task ownership.
 
 # Features
-- User authentication (register, login, logout)
-- Task ownership per user
-- Create, edit, delete, and view tasks
-- Search, filter, and sort tasks
-- Clean, responsive UI
+User authentication (register, login, logout)
+
+Guest task creation with automatic ownership transfer on signup/login
+
+Per-user task ownership and access control
+
+Create, edit, complete, and delete tasks
+
+Search, filter, and sort tasks
+
+SQLite database with enforced constraints and migrations
+
+Production deployment using WSGI
 
 # Tech Stack
-- Python
-- Flask
-- SQLite
-- HTML / CSS
-- Jinja2 templates
+Backend: Python, Flask
+
+Database: SQLite (foreign keys, constraints, migrations)
+
+Frontend: HTML, CSS, Jinja2 templates
+
+Auth & Security: Werkzeug password hashing, session management
+
+Deployment: WSGI (Gunicorn-compatible), Render
+
+Tooling: Git, GitHub Actions (sanity import checks)
 
 ## Screenshots
 
@@ -33,16 +47,12 @@ A full-stack task management web application built with Flask.
 git clone https://github.com/josephshinkle/task-manager.git
 cd task-manager
 
-# Create venv (repo root)
 python -m venv .venv
+source .venv/bin/activate   # Mac/Linux
+# .\.venv\Scripts\activate  # Windows
 
-# Activate venv
-# Windows (PowerShell):
-.\.venv\Scripts\Activate.ps1
-# Windows (CMD):
-.\.venv\Scripts\activate.bat
-# Mac/Linux:
-source .venv/bin/activate
+pip install -r requirements.txt
+python -m Project.app
 
 # Install dependencies
 pip install -r requirements.txt
