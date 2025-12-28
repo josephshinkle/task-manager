@@ -53,9 +53,3 @@ source .venv/bin/activate   # Mac/Linux
 
 pip install -r requirements.txt
 python -m Project.app
-
-# Install dependencies
-pip install -r requirements.txt
-
-# Run the app
-python Project/app.py
