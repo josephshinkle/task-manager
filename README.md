@@ -20,13 +20,13 @@ Production deployment using WSGI
 # Tech Stack
 Backend: Python, Flask
 
-Database: SQLite (foreign keys, constraints, migrations)
+Database: SQLite
 
 Frontend: HTML, CSS, Jinja2 templates
 
 Auth & Security: Werkzeug password hashing, session management
 
-Deployment: WSGI (Gunicorn-compatible), Render
+Deployment: WSGI, Render
 
 Tooling: Git, GitHub Actions (sanity import checks)
 
